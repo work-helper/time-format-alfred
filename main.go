@@ -36,7 +36,10 @@ func main() {
 	}
 	dotIndex := strings.LastIndex(paramTime, ",")
 	if dotIndex > 0 {
-		paramLoc = paramTime[dotIndex+1:]
+		paramLoc := paramTime[dotIndex+1:]
+		if strings.HasPrefix(paramLoc, "UTC") || strings.HasPrefix(paramLoc, "GMT") {
+			paramLoc = "Etc/" + paramLoc
+		}
 		paramTime = paramTime[:dotIndex]
 	}
 
