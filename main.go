@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +22,7 @@ var (
 	resultItems = model.Items{
 		Items: make([]model.Item, 0, 3),
 	}
+	regx = regexp.MustCompile("gmt|utc|UTC")
 )
 
 func init() {
@@ -36,8 +38,14 @@ func main() {
 	}
 	dotIndex := strings.LastIndex(paramTime, ",")
 	if dotIndex > 0 {
-		paramLoc := paramTime[dotIndex+1:]
-		if strings.HasPrefix(paramLoc, "UTC") || strings.HasPrefix(paramLoc, "GMT") {
+		// 时区真是dt
+		paramLoc = regx.ReplaceAllString(paramTime[dotIndex+1:], "GMT")
+		if strings.HasPrefix(paramLoc, "GMT") {
+			if strings.LastIndex(paramLoc, "+") > 0 {
+				paramLoc = strings.Replace(paramLoc, "+", "-", -1)
+			} else {
+				paramLoc = strings.Replace(paramLoc, "-", "+", -1)
+			}
 			paramLoc = "Etc/" + paramLoc
 		}
 		paramTime = paramTime[:dotIndex]
