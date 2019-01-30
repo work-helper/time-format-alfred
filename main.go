@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/noaway/dateparse"
 	"strconv"
 	"strings"
 	"time"
+	"time-format-alfred/dateparse"
 	"time-format-alfred/model"
 )
 
