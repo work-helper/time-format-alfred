@@ -5,12 +5,15 @@ import (
 	"flag"
 	"fmt"
 	"github.com/noaway/dateparse"
+	"strconv"
+	"strings"
 	"time"
 	"time-format-alfred/model"
 )
 
 var (
 	paramTime string
+	paramLoc  = "Local"
 	help      bool
 	icon      = model.Icon{
 		Path: "./icon.png",
@@ -31,8 +34,19 @@ func main() {
 		flag.Usage()
 		return
 	}
+	dotIndex := strings.LastIndex(paramTime, ",")
+	if dotIndex > 0 {
+		paramLoc = paramTime[dotIndex+1:]
+		paramTime = paramTime[:dotIndex]
+	}
 
-	result, e := dateparse.ParseAny(paramTime)
+	// 支持now
+	if strings.HasPrefix(paramTime, "now") {
+		paramTime = strconv.FormatInt(time.Now().Unix(), 10)
+	}
+
+	defaultLoc, _ := time.LoadLocation(paramLoc)
+	result, e := dateparse.ParseIn(paramTime, defaultLoc)
 	if e != nil {
 		formatError(e)
 		return
@@ -59,6 +73,7 @@ func formatError(e error) {
 // 按照指定时区输出
 func formatTimestamp(timeNano int64, timeZones []string) {
 	unix := time.Unix(convertSecond(timeNano), timeNano%1000000)
+	addTimeStampItem(timeNano)
 	for _, zone := range timeZones {
 		loc, _ := time.LoadLocation(zone)
 		result := unix.In(loc).Format("2006-01-02T15:04:05 -07:00 MST")
@@ -66,6 +81,7 @@ func formatTimestamp(timeNano int64, timeZones []string) {
 			Uid:      "1",
 			Title:    loc.String(),
 			Subtitle: result,
+			Arg:      result,
 			Icon:     icon,
 		}
 		resultItems.Items = append(resultItems.Items, item)
@@ -74,6 +90,22 @@ func formatTimestamp(timeNano int64, timeZones []string) {
 	fmt.Println(string(bytes))
 }
 
+func addTimeStampItem(timeNano int64) {
+	timeStamp := strconv.FormatInt(convertMillisecond(timeNano), 10)
+	item := model.Item{
+		Uid:      "1",
+		Title:    "TimeStamp",
+		Subtitle: timeStamp + " ms",
+		Arg:      timeStamp,
+		Icon:     icon,
+	}
+	resultItems.Items = append(resultItems.Items, item)
+}
+
 func convertSecond(timeNano int64) int64 {
 	return timeNano / int64(time.Second)
+}
+
+func convertMillisecond(timeNano int64) int64 {
+	return timeNano / int64(time.Millisecond)
 }
